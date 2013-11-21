@@ -1,12 +1,12 @@
+import java.awt.Font;
 import java.io.*;
 import java.util.*;
 public class Flatscape { 
-	public static void main(String[] args) {
-		/* Flatscape Alpha Version 1.6
+	public static void main(String[] args) throws InterruptedException {
+		/* Flatscape Alpha Version 1.9
 		   Orignally done by the Prinecton Programming webstie in flash, now adapted to java
 		   Credit to bleach and tim for various help and ideas for the program
 		   Things to add:
-		    -Full Opening
 		    -Ability to restart once done
 		    -Spinning squares
 		    -Upgrades
@@ -14,9 +14,8 @@ public class Flatscape {
 		    -Hats
 		    -More random squares 
 		    -Chaging difficulty
-		    -Limiting Number of Entities on the screen
 		    -Debug menu (entities, fps, postition)
-		    -Hacks (enable invulnerability, instant death button)
+		    -Hacks (enable invulnerability)
 		    -Longer high score list, with names
 		*/
 		// set the scale of the coordinate system
@@ -39,19 +38,48 @@ public class Flatscape {
 		double[] sVel = null; // individual velocity of each square
 		double vx = 0, vy = 0;     // velocity (character)
 		double TriAngle = 0;  // angle of the triangle
-		double velocity = 0.014; // speed of the bullet
-		double sVelocity = 0.001; // squares velocity
+		double velocity = 0.028; // speed of the bullet
+		double sVelocity = 0.003; // squares velocity
 		double angle = 0; double adj = 0; double opp = 0; //used for determining velocity
 		int score = 0; int delay = 0; int squareDelay = 0; int diffDelay = 10;   int highScore = in.nextInt(); int level = 1; //Score, changes how fast bullets spawn, can be based on difficulty and level
 		ArrayList<Double> sType = new ArrayList<Double>(); //Random variable that chooses if the square is big or small
-		boolean end = false; //ends the program
-		double randSqr = 0; //Indiviual size of the square
+		boolean end = false; int count = 0; int pointCount = 0;//ends the program
+		double randSqr = 0; ArrayList<Integer> health = new ArrayList<Integer>();//Indiviual size of the square
+		double pointX = 0; double pointY= 0; boolean square = true;  double startTime = 0;
 		
-		StdDraw.picture(0, 0, "Title.png");
-		// main animation loop
-		while (!StdDraw.mousePressed()) {}
-		while (!end)  { 
+		//Credits
+		StdDraw.picture(0, 0, "Java.png", 2.2, 2.2);
+		Thread.sleep(3000);
+		StdDraw.picture(0, 0, "Ready.png", 2.2, 2.2);
+		Thread.sleep(1000);
+		StdDraw.picture(0, 0, "Red.png", 2.2, 2.2);
+		Thread.sleep(500);
+		StdDraw.picture(0, 0, "Yellow.png", 2.2, 2.2);
+		Thread.sleep(500);
+		StdDraw.picture(0, 0, "Title.png", 2.2, 2.2);
+		Thread.sleep(3000);
+		StdDraw.picture(0, 0, "Open.png", 2.2, 2.2);
 
+		// main animation loop
+		while (!StdDraw.isKeyPressed(10)) {}
+		StdDraw.setFont(new Font("SansSerif" , Font.PLAIN, 68));
+		
+		while (!end)  { 
+			if (TriAngle == 0) {
+				StdDraw.clear();
+				StdDraw.text(0,0,"3");
+				Thread.sleep(1000);
+				StdDraw.clear();
+				StdDraw.text(0,0,"2");
+				Thread.sleep(1000);
+				StdDraw.clear();
+				StdDraw.text(0,0,"1");
+				Thread.sleep(1000);
+				StdDraw.clear();
+				startTime = System.currentTimeMillis();
+				}
+			StdDraw.setFont();
+			
 			// changes angle on character (Stolen from tim's program)
 			TriAngle = Math.toDegrees(Math.atan((StdDraw.mouseY() - ry)/(StdDraw.mouseX() - rx))) - 90;
 			if (StdDraw.mouseX() < rx) {TriAngle = TriAngle - 180;}
@@ -75,7 +103,8 @@ public class Flatscape {
 			//Changes the direction of the bullet, based on the direction of the character (Revised by me, then bleach,
 			//then me again, then bleach again)
 			if (delay <= 0) { 
-				delay = diffDelay;
+				if (diffDelay > 0) {
+					delay = diffDelay;}
 				//Creates the velocity of the bullet, based on where the mouse is angle-wise
 				adj = StdDraw.mouseX() - rx;
 				opp = StdDraw.mouseY() - ry;
@@ -87,14 +116,14 @@ public class Flatscape {
 				}
 			
 			//Creates the square, giving it a random place
-			if (squareDelay <= 0) {
+			if (squareDelay <= 0 && sp.size() <=100) {
 				squareDelay = diffDelay * 5;
 				randX = Math.random() + Math.random() - 1;
 				randY = Math.random() + Math.random() - 1;
 				
 				//Prevents blocks from spawning on your character
-				while (rx + .15 >= randX && rx - .15 <= randX) {randX = Math.random() + Math.random() - 1;}
-				while (ry + .15 >= randY && ry - .15 <= randY) {randY = Math.random() + Math.random() - 1;}
+				while (rx + .075 >= randX && rx - .075 <= randX) {randX = Math.random() + Math.random() - 1;}
+				while (ry + .075 >= randY && ry - .075 <= randY) {randY = Math.random() + Math.random() - 1;}
 				sType.add(Math.random());
 				
 				//Sets position and velocity, which goes toward the edge of the screen
@@ -103,11 +132,12 @@ public class Flatscape {
 					sVel = new double[]{sVelocity * (randX / Math.abs(randX)) , sVelocity * (randY / Math.abs(randY))};
 					}
 				else {
-					sVel = new double[]{Math.cos(Math.atan(ry - randY/rx - randX)) * ((rx - randX)/Math.abs(rx - randX)) * sVelocity , Math.sin(Math.atan(randY - ry/randX -rx)) * ((randY - ry)/Math.abs(randY - ry)) * sVelocity };
-				}
+					sVel = new double[]{Math.cos(Math.atan(ry - randY/rx - randX)) * ((rx - randX)/Math.abs(rx - randX)) * sVelocity , Math.sin(Math.atan(ry - randY/rx - randX)) * ((ry- randY)/Math.abs(ry - randY)) * sVelocity };
+					}
 				sp.add(sPos);
-				sv.add(sVel);	
-				}
+				sv.add(sVel);
+				health.add(4);
+					}
 			 
 			//Creates two more arrays, each instance will carry two variables, represeting x and y positon and velocity
 			double [][] posArray = bp.toArray(new double[0][0]);
@@ -133,7 +163,7 @@ public class Flatscape {
 				randSqr = stypeArray[i];
 				sPos[0] = sPos[0] + sVel[0];
 				sPos[1] = sPos[1] + sVel[1];
-				StdDraw.setPenColor(StdDraw.GRAY);
+				StdDraw.setPenColor(StdDraw.WHITE);
 				if (randSqr < .8) {
 					StdDraw.square(sPos[0], sPos[1], .04);
 					}
@@ -168,7 +198,10 @@ public class Flatscape {
 					sPos = sposArray[j];
 					sVel = svelArray[j];
 					randSqr = stypeArray[j];
+					if (pointCount == 0) {pointX = sPos[0]; pointY = sPos[1];}
 					if (randSqr < .8) {
+						
+						//If it hits, remove the bullet and sqaure, add to the score
 						if ((Pos[0] + .04 >= sPos[0] && Pos[0] - .04 <= sPos[0]) && (Pos[1] + .04 >= sPos[1] && Pos[1] - .04 <= sPos[1])) {
 							sp.remove(sPos);
 							sv.remove(sVel);
@@ -176,32 +209,81 @@ public class Flatscape {
 							bv.remove(Vel);
 							sType.remove(randSqr);
 							score++;
+							pointCount = 10;
+							square = false;
 							continue;
+							}
+						
+						//Shows that you hit it with a little marker
+						if (pointCount > 0 && !square) {
+							StdDraw.setPenColor(StdDraw.CYAN);
+							StdDraw.text(pointX,pointY + .1, "+1" );
 							}
 						}
 					else {
+						//Hit detection for larger squares
 						if ((Pos[0] + .1 >= sPos[0] && Pos[0] - .1 <= sPos[0]) && (Pos[1] + .1 >= sPos[1] && Pos[1] - .1 <= sPos[1])) {
-							sp.remove(sPos);
-							sv.remove(sVel);
-							bp.remove(Pos);
-							bv.remove(Vel);
-							sType.remove(randSqr);
-							score = score + 10;
+							
+							//Only dies after 4 hits
+							if (health.get(j) > 0) {
+								bp.remove(Pos);
+								bv.remove(Vel);
+								health.set(j,health.get(j) - 1);
+								}
+							
+							//Adds 10 points instead
+							else {
+								sp.remove(sPos);
+								sv.remove(sVel);
+								sType.remove(randSqr);
+								health.remove(j);
+								pointCount = 10;
+								score = score + 10;
+								square = true;
+								}
 							continue;
+							}
+						
+						//Shows points for large squares
+						if (pointCount > 0 && square) {
+							StdDraw.setPenColor(StdDraw.CYAN);
+							StdDraw.text(pointX,pointY + .1, "+10" );
 							}
 						}
 					}	
 				}
+			//Counts down to keep the points added shown
+			if (pointCount > 0) {pointCount--;}
 			
-			if (score%50 == 0 && score != 0) {
+			//Cheats to add points
+			if (StdDraw.isKeyPressed(33)) {score++;}
+			
+			//Confusing score system, level up is at 50 and then every 100's
+			if (score%100 == 0 && score != 0) {
 				diffDelay--;
 				score++;
 				level++;
+				count = 40;
 				}
-			if (level < ((score - score%50) /50) + 1) {
+			if (level < ((score - score%100) /100) + 2 && score > 100) {
 				level++;
-				diffDelay = diffDelay -2;
+				diffDelay--;
+				count = 40;
 				}
+			if (level < ((score - score%50) /50) + 1 && level == 1) {
+				level++;
+				diffDelay--;
+				count = 40;
+				}
+			
+			//Shows level on each level up
+			if (count != 0) {
+				StdDraw.setFont(new Font("SansSerif" , Font.PLAIN, 68));
+				StdDraw.setPenColor(StdDraw.CYAN);
+				StdDraw.text(0, 0, "Level " + level);
+				count--;
+			}
+			StdDraw.setFont();
 			
 			//Delays on how often it makes squares
 			delay--;
@@ -214,12 +296,15 @@ public class Flatscape {
 			StdDraw.textLeft(-1, -.9, "Score:" + score);
 			StdDraw.textLeft(-1, -1, "High Score:" + highScore);
 			StdDraw.textRight(1, -1, "Level " + level);
-
+			StdDraw.text(0, -1,(( (double)Math.round(((System.currentTimeMillis() - startTime) /1000) *10) /10) +" Seconds"));
+			
 			// Displays and sets the background
 			StdDraw.show(0); 
 			StdDraw.picture(0,0, "Background.png", 2.4, 2.4);
 			
 			if (score > highScore) {highScore = score;}
+			
+			if (StdDraw.isKeyPressed(68)) {end = true;}
 			}
 		
 		//Losing screen
@@ -229,7 +314,7 @@ public class Flatscape {
 			out.close();
 			}
 		catch (FileNotFoundException e) {e.printStackTrace();}
-		StdDraw.picture(0, 0, "loser.jpg", 2.5, 2.2);
+		StdDraw.picture(0, 0, "loser.jpg", 2.2, 2.2);
 		StdDraw.text(0, -.9, "Final Score: " + score);
 		StdDraw.show(0);
 		} 
