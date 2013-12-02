@@ -68,6 +68,7 @@ public class Flatscape {
 		double[] Vel = null; 
 		double[] sPos = null;  
 		double[] sVel = null; 
+		double[] pPos = null;
 		double vx = 0, vy = 0;     // velocity (character)
 		double TriAngle = 0;  // angle of the triangle
 		double velocity = 0.028; // speed of the bullet
@@ -77,7 +78,7 @@ public class Flatscape {
 		int delay = 0; int squareDelay = 0; int diffDelay = 10;  //Delays for spawning, can be changed based on level or difficulty
 		int level = 1; int count = 0; 	int score = 0; int highScore = in.nextInt();// Level, score and count to dispaly levelup, and high score
 		boolean invul = false; int invulCount = 0; int offInvul = 0; //invulnerbility cheat
-		int powerup = 0; boolean[] powerType = new boolean[2];
+		int powerup = 0; boolean[] powerType = new boolean[2]; 
 		
 		//Waits on ending screen
 		if (end) {
@@ -222,7 +223,6 @@ public class Flatscape {
 				else if (bp.get(i)[2] == 2) counts[1]++;
 				else if (bp.get(i)[2] == 3) counts[2]++;
 				else if (bp.get(i)[2] == 4) counts[3]++;
-				System.out.println(bp.get(i)[2]);
 				}
 			
 			//Creates arrays
@@ -309,7 +309,6 @@ public class Flatscape {
 					sVel = pvelArray[j];
 					if ((Pos[0] + .03 >= sPos[0] && Pos[0] - .03 <= sPos[0]) && (Pos[1] + .03 >= sPos[1] && Pos[1] - .03 <= sPos[1])) {
 						sVel[0]--;
-						System.out.println("headshot");
 						bp.remove(Pos);
 						bv.remove(Vel);
 						}
@@ -340,8 +339,8 @@ public class Flatscape {
 							bp.add(sPos);
 							bv.add(sSmall);
 							if (Math.random() < .05) {
-								sPos[2] = 4;
-								bp.add(sPos); 
+								pPos = new double[] {sPos[0],sPos[1],4};
+								bp.add(pPos); 
 								if (Math.random() < .5) bv.add(sRapid);
 								else bv.add(sFast);
 								}
@@ -371,8 +370,8 @@ public class Flatscape {
 								bp.add(sPos);
 								bv.add(sBig);
 								if (Math.random() < .05) {
-									sPos[2] = 4;
-									bp.add(sPos);
+									pPos = new double[] {sPos[0],sPos[1],4};
+									bp.add(pPos);
 									if (Math.random() < .5) bv.add(sRapid);
 									else bv.add(sFast);
 									}
@@ -388,15 +387,10 @@ public class Flatscape {
 			for (int j = 0; j < pposArray.length; j++) {
 				sPos = pposArray[j];
 				sVel = pvelArray[j];
-				System.out.println(pvelArray.length);
-				System.out.println(pposArray.length);
-				System.out.println(sPos[0]);
-				System.out.println(sPos[1]);
-				System.out.println(sPos[2]);
-				System.out.println(sVel[0]);
-				System.out.println(sVel[1]);
-				System.out.println(sVel[2]);
 				if (sVel[0] <= 0){
+					powerType = new boolean[2];
+					if (sVel[1] == 1) powerType[0] = true;
+					else if (sVel[1] == 2) powerType[1] = true;
 					bp.remove(sPos);
 					bv.remove(sVel);
 					powerup = 300;
@@ -405,12 +399,10 @@ public class Flatscape {
 					if (sVel[1] == 1) {
 						StdDraw.setPenColor(StdDraw.ORANGE);
 						StdDraw.filledSquare(sPos[0],sPos[1], .03);
-						powerType[0] = true;
 						}
 					else if (sVel[1] == 2) {
 						StdDraw.setPenColor(StdDraw.RED);
 						StdDraw.filledSquare(sPos[0],sPos[1], .03);
-						powerType[1] = true;
 						}
 					bp.add(sPos);
 					bv.add(sVel);
@@ -463,9 +455,8 @@ public class Flatscape {
 					bv.add(Vel);
 					}
 				}
-			if (powerup == 0) powerType = new boolean[2];
 			
-			if (powerup > 0 && (powerType[0] || powerType[1])) {
+			if (powerup > 0) {
 				if (powerType[0]) velocity = .084;
 				else if (powerType[1])  {	delay = 0; velocity = .02;}
 				}
