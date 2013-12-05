@@ -1,37 +1,41 @@
 import java.awt.Font;
 import java.io.*;
 import java.util.*;
-public class Flatscape { 
+public class FlatSpace { 
 	public static void main(String[] args) throws InterruptedException {
-		/* Flatscape Alpha Version 1.9.5
+		/* FlatSpace Alpha Version 1.9.9 -Beta once HD textures for powerups and opening are done
 		   Orignally done by the Prinecton Programming webstie in flash, now adapted to java
 		   Credit to bleach and tim for various help and ideas for the program
 		   Things to add:
-		    -Spinning squares (maybe not)
-		    -Upgrades
 		    -Different enemies
-		    -Hats
-		    -More random squares 
+		    -More Textures
 		    -Chaging difficulty
-		    -Debug menu (entities, fps, postition)
-		    -Hacks ()
 		    -Longer high score list, with names
+		    -Final HD textures
 		    Bugs:
+		     -IMPORTANT Seemingly after level 11 when delay is 0, earliest happened is 12, 
+		      the game will crash because the array that controls the powerup type and timer does not exist
 		     -Health may not be completely working
-		     -Need to condense variables down by making a 3 part arraylist like tim (in the works)
 		     -Make Squares not inside each other
-		     -Fully functioning menu for beta 1 (mostly)
 		     -Squares still stuck at the bottom of the screen
 		*/
-		String version = "Alpha Version 1.9.5";
+		String version = "Alpha Version 1.9.9";
+		
+		//Sets the pictures used
+		String[] pictures = new String[3];
+		pictures[0] = "Default/FixedTriangle.png";
+		pictures[1] = "Default/smallSquare.png";
+		pictures[2] = "Default/Square.png";
+		
 		// set the scale of the coordinate system
 		StdDraw.setXscale(-1.0, 1.0);
 		StdDraw.setYscale(-1.0, 1.0);
 		
-		//End equaling true terminates the game
+		//End equaling true terminates the game, skip used for credits and menu
 		boolean end = false;
 		boolean skip = false;
 		
+		//Gives you the option to skip or watch the credits
 		StdDraw.picture(0, 0, "Choose.png", 2.2, 2.2);
 		while (!StdDraw.isKeyPressed(10) && !StdDraw.isKeyPressed(8)) {}
 		if(StdDraw.isKeyPressed(8)) skip = true;
@@ -50,13 +54,13 @@ public class Flatscape {
 			StdDraw.picture(0, 0, "Title.png", 2.2, 2.2);
 			Thread.sleep(3000);
 			skip = true;
-			}
-		Thread.sleep(100);	
+			}	
+		
 		// initial values 
 		while (true) {
 		double startTime = 0; //Established when game starts
 		Scanner in = null;
-		try {in = new Scanner(new File("High Score.txt"));} 
+		try {in = new Scanner(new File("High Score.txt"));}  //Imports high score
 		catch (FileNotFoundException e1) {e1.printStackTrace();}
 		double rx  = .48; double ry = .86;   // position (character)
 		double randX = 0; double randY = 0;  // position (square)
@@ -68,7 +72,7 @@ public class Flatscape {
 		double[] Vel = null; 
 		double[] sPos = null;  
 		double[] sVel = null; 
-		double[] pPos = null;
+		double[] pPos = null; //Extra array needed for powerups due to glitchy java
 		double vx = 0, vy = 0;     // velocity (character)
 		double TriAngle = 0;  // angle of the triangle
 		double velocity = 0.028; // speed of the bullet
@@ -78,7 +82,11 @@ public class Flatscape {
 		int delay = 0; int squareDelay = 0; int diffDelay = 10;  //Delays for spawning, can be changed based on level or difficulty
 		int level = 1; int count = 0; 	int score = 0; int highScore = in.nextInt();// Level, score and count to dispaly levelup, and high score
 		boolean invul = false; int invulCount = 0; int offInvul = 0; //invulnerbility cheat
-		int powerup = 0; boolean[] powerType = new boolean[2]; 
+		int powerup = 0; boolean[] powerType = new boolean[2]; //Powerup stuff
+		int f3count = 0; int f3offcount = 0; boolean f3 = false; int ents = 0; //Debug menu
+		int degree = 0; 
+		int FPS = 0; int FPScount = 0;
+		boolean Inv = true;
 		
 		//Waits on ending screen
 		if (end) {
@@ -90,31 +98,67 @@ public class Flatscape {
 		//Main Menu
 		skip = false;
 		while (!skip) {
+			
 			//Title Screen	
 			StdDraw.picture(0, 0, "StartScreen.jpg", 2.2, 2.2);
 			StdDraw.show(0);
 			while (!StdDraw.isKeyPressed(10) && !StdDraw.isKeyPressed(112) && !StdDraw.isKeyPressed(113) && !StdDraw.isKeyPressed(114) && !StdDraw.isKeyPressed(115)) {}
+			
 			//Start Game
 			if (StdDraw.isKeyPressed(10)) {skip = true;}
+			
 			//Inventory
-			else if (StdDraw.isKeyPressed(112)) {}
+			else if (StdDraw.isKeyPressed(112)) {
+				StdDraw.setPenColor(StdDraw.BLACK);
+				StdDraw.filledRectangle(0, 0, 1.1, 1.1);
+				StdDraw.setPenColor(StdDraw.WHITE);
+				StdDraw.text(0, .7, "Inventory");
+				StdDraw.text(0, .5, "1: JoyStick");
+				StdDraw.text(0, .4, "2: Bad Drow Hat");
+				StdDraw.text(0, .3, "3: Old Valve Sale Announcment");
+				StdDraw.setPenColor(StdDraw.RED);
+				StdDraw.text(0, -1, "Press Esc to return to Main Menu");
+				StdDraw.show(0);
+				while (Inv) {
+					if (StdDraw.isKeyPressed(49)) {
+						pictures[0] = "Default/FixedTriangle.png";
+						pictures[1] = "Default/smallSquare.png";
+						pictures[2] = "Default/Square.png";
+						}
+					if (StdDraw.isKeyPressed(50)) {
+						pictures[0] = "Bad Drow/Drow.jpg";
+						pictures[1] = "Bad Drow/Daedalus.png";
+						pictures[2] = "Bad Drow/MantaStyle.png";
+						}
+					if (StdDraw.isKeyPressed(51)) {
+						pictures[0] = "Steam Sale/Wallet.gif";
+						pictures[1] = "Steam Sale/Discount.png";
+						pictures[2] = "Steam Sale/HalfLife.png";
+						}
+					if (StdDraw.isKeyPressed(27)) {Inv = false;}
+					}
+				}
+			
 			//How to Play
 			else if (StdDraw.isKeyPressed(113)) {
 				StdDraw.setPenColor(StdDraw.BLACK);
 				StdDraw.filledRectangle(0, 0, 1.1, 1.1);
 				StdDraw.setPenColor(StdDraw.WHITE);
 				StdDraw.text(0, .7, "How to Play");
-				StdDraw.text(0, .6, "Your goal is to kill as many squares as possible without dying");
+				StdDraw.text(0, .6, "Your goal is to kill as many enemies as possible without dying");
 				StdDraw.text(0, .5, "Bullets will shoot from your ship to the mouse");
 				StdDraw.text(0, .4, "Click and hold to have your shp move towards your mouse");
-				StdDraw.text(0, .3, "As you kill squares your bullets are faster and the squares spawn more frequently");
-				StdDraw.text(0, .2, "Larger squares spawn less frequently but take more hits to kill");
-				StdDraw.text(0, .1, "Watch for power ups to gain the edge");
+				StdDraw.text(0, .3, "Kill enemies to level up");
+				StdDraw.text(0, .2, "As you level up, the enemies are tougher but your weapons are better");
+				StdDraw.text(0, .1, "Larger squares spawn less frequently but take more hits to kill");
+				StdDraw.text(0, 0, "Watch for power ups to gain the edge");
+				StdDraw.text(0, -.1, "Go to your inventory to try out the different skins");
 				StdDraw.setPenColor(StdDraw.RED);
 				StdDraw.text(0, -1, "Press Esc to return to Main Menu");
 				StdDraw.show(0);
 				while (!StdDraw.isKeyPressed(27)) {}
 				}
+			
 			//High Score
 			else if (StdDraw.isKeyPressed(114)) {
 				StdDraw.setPenColor(StdDraw.BLACK);
@@ -128,15 +172,31 @@ public class Flatscape {
 				StdDraw.show(0);
 				while (!StdDraw.isKeyPressed(27)) {}
 				}
+			
 			//Quit
 			else if (StdDraw.isKeyPressed(115)) {System.exit(0);}
 			}
+		
+		double fpsStart = System.currentTimeMillis();
+		
 		// main animation loop
 		while (!end)  { 
-			double[] sFast = {3,1,4};
-			double[] sRapid = {3,2,4};
+			
+			//arrays set up for various things that emtpied if they werent redeclared every time
+			double[] sFast = {10,1,4};
+			double[] sRapid = {10,2,4};
 			double[] sBig = {1,20,3};
 			double[] sSmall = {0,20,3};
+			
+			//FPS counter
+			FPScount++;
+			if (System.currentTimeMillis() - fpsStart > 1000) {
+				FPS = FPScount;
+				FPScount = 0;
+				fpsStart = System.currentTimeMillis();
+				}
+			
+			//Loading the game
 			if (startTime == 0) {
 				StdDraw.setFont(new Font("SansSerif" , Font.PLAIN, 68));
 				StdDraw.setPenColor(StdDraw.WHITE);
@@ -168,8 +228,7 @@ public class Flatscape {
 			StdDraw.circle(StdDraw.mouseX(), StdDraw.mouseY(), .05);
 
 			// draw character on the screen
-			StdDraw.setPenColor(StdDraw.BLUE); 
-			StdDraw.picture(rx, ry, "FixedTriangle.png",.1,.1,TriAngle);
+			StdDraw.picture(rx, ry, pictures[0],.1,.1,TriAngle);
 			
 			//Changes the direction of the bullet, based on the direction of the character (Revised by me, then bleach,
 			//then me again, then bleach again)
@@ -190,14 +249,14 @@ public class Flatscape {
 				}
 			
 			//Creates the square, giving it a random place
-			if (squareDelay <= 0 && bp.size() <=100) {
+			if (squareDelay <= 0 && bp.size() <=150) {
 				squareDelay = diffDelay * 5;
 				randX = Math.random() + Math.random() - 1;
 				randY = Math.random() + Math.random() - 1;
 				
 				//Prevents blocks from spawning on your character
 				while (rx + .1 >= randX && rx - .1 <= randX) {randX = Math.random() + Math.random() - 1;}
-				while (ry + .1 >= randY && ry - .1 <= randY && randY < -.8) {randY = Math.random() + Math.random() - 1;}
+				while (ry + .1 >= randY && ry - .1 <= randY && randY < -.75) {randY = Math.random() + Math.random() - 1;}
 				sType.add(Math.random());
 				
 				//Sets position and velocity, which goes toward the edge of the screen
@@ -236,6 +295,8 @@ public class Flatscape {
 			double [][] pvelArray = new double[counts[3]][counts[3]];
 			
 			//Builds arrays with correct object only
+			while (bp.size() > bv.size()) {bp.remove(bp.size() -1);}
+			while (bv.size() > bp.size()) {bv.remove(bv.size() -1);}
 			counts = new int[4];
 			for (int i = 0; i < bp.size(); i++) {
 				if (bp.get(i)[2] == 1 && bv.get(i)[2] == 1) {
@@ -260,7 +321,10 @@ public class Flatscape {
 					}
 				}
 			
-			//Some way to make with intergrated maybe?
+			//Saves entities size for later
+			ents = bp.size();
+					
+			//Some way to make intergrated maybe?
 			double [] stypeArray = new double[sType.size()];
 			for (int i = 0; i < sType.size(); i++) {stypeArray[i] = sType.get(i);}
 					
@@ -278,9 +342,9 @@ public class Flatscape {
 				sPos[1] = sPos[1] + sVel[1];
 				StdDraw.setPenColor(StdDraw.WHITE);
 				if (randSqr < .8) {
-					StdDraw.square(sPos[0], sPos[1], .04);
+					StdDraw.picture(sPos[0], sPos[1], pictures[1], .08, .084,degree);
 					}
-				else {StdDraw.square(sPos[0], sPos[1], .10);}
+				else {StdDraw.picture(sPos[0], sPos[1], pictures[2], .2, .2,degree);}
 				bp.add(sPos);
 				bv.add(sVel);
 				sType.add(randSqr);
@@ -307,7 +371,9 @@ public class Flatscape {
 				for (int j = 0; j< pposArray.length; j++) {
 					sPos = pposArray[j];
 					sVel = pvelArray[j];
-					if ((Pos[0] + .03 >= sPos[0] && Pos[0] - .03 <= sPos[0]) && (Pos[1] + .03 >= sPos[1] && Pos[1] - .03 <= sPos[1])) {
+					if (sPos.length != 3) {continue;}
+					if (sVel.length != 3) {continue;}
+					if ((Pos[0] + .04 >= sPos[0] && Pos[0] - .04 <= sPos[0]) && (Pos[1] + .04 >= sPos[1] && Pos[1] - .04 <= sPos[1])) {
 						sVel[0]--;
 						bp.remove(Pos);
 						bv.remove(Vel);
@@ -335,14 +401,16 @@ public class Flatscape {
 							bp.remove(Pos);
 							bv.remove(Vel);
 							sType.remove(randSqr);
-							sPos[2] = 3;
-							bp.add(sPos);
-							bv.add(sSmall);
-							if (Math.random() < .05) {
+							if (Math.random() < .05 && !powerType[0] && !powerType[1]) {
 								pPos = new double[] {sPos[0],sPos[1],4};
 								bp.add(pPos); 
 								if (Math.random() < .5) bv.add(sRapid);
 								else bv.add(sFast);
+								}
+							else {
+								sPos[2] = 3;
+								bp.add(sPos);
+								bv.add(sSmall);
 								}
 							score++;
 							continue;
@@ -366,15 +434,17 @@ public class Flatscape {
 								bv.remove(sVel);
 								sType.remove(randSqr);
 								health.remove(j);
-								sPos[2] = 3;
-								bp.add(sPos);
-								bv.add(sBig);
-								if (Math.random() < .05) {
+								if (Math.random() < .05 && !powerType[0] && !powerType[1]) {
 									pPos = new double[] {sPos[0],sPos[1],4};
 									bp.add(pPos);
 									if (Math.random() < .5) bv.add(sRapid);
 									else bv.add(sFast);
 									}
+								else {
+									sPos[2] = 3;
+									bp.add(sPos);
+									bv.add(sBig);
+								}
 								score = score + 10;
 								}
 							continue;
@@ -387,6 +457,7 @@ public class Flatscape {
 			for (int j = 0; j < pposArray.length; j++) {
 				sPos = pposArray[j];
 				sVel = pvelArray[j];
+				if (sVel.length != 3) {continue;}
 				if (sVel[0] <= 0){
 					powerType = new boolean[2];
 					if (sVel[1] == 1) powerType[0] = true;
@@ -398,11 +469,11 @@ public class Flatscape {
 				else {
 					if (sVel[1] == 1) {
 						StdDraw.setPenColor(StdDraw.ORANGE);
-						StdDraw.filledSquare(sPos[0],sPos[1], .03);
+						StdDraw.filledSquare(sPos[0],sPos[1], .04);
 						}
 					else if (sVel[1] == 2) {
 						StdDraw.setPenColor(StdDraw.RED);
-						StdDraw.filledSquare(sPos[0],sPos[1], .03);
+						StdDraw.filledSquare(sPos[0],sPos[1], .04);
 						}
 					bp.add(sPos);
 					bv.add(sVel);
@@ -456,11 +527,20 @@ public class Flatscape {
 					}
 				}
 			
+			//Changes powerups make
 			if (powerup > 0) {
-				if (powerType[0]) velocity = .084;
-				else if (powerType[1])  {	delay = 0; velocity = .02;}
+				StdDraw.setPenColor(StdDraw.WHITE);
+				if (powerType[0]) {
+					velocity = .084;
+					StdDraw.textRight(1.05,.8,"Fast Bullets Active");
+					}
+				else if (powerType[1])  {
+					delay = 0; 
+					velocity = .02;
+					StdDraw.textRight(1.05,.8,"Rapid Fire Active");
+					}
 				}
-			else velocity = .028;
+			else {velocity = .028; powerType = new boolean[2];}
 			
 			//Shows level on each level up
 			if (count != 0) {
@@ -474,6 +554,9 @@ public class Flatscape {
 			//counts for powerups
 			if (powerup > 0) {powerup--;}
 			
+			degree++;
+			if (degree >= 360) {degree = 0;}
+			
 			//Delays on how often it makes squares
 			delay--;
 			squareDelay--;
@@ -481,17 +564,30 @@ public class Flatscape {
 			//counts for invulnerbility cheat
 			if (invulCount > 0) invulCount--; 
 			if (offInvul >0) offInvul--;
-			
+			if (f3count > 0) f3count--;
+			if (f3offcount > 0) f3offcount--;
 			// Displays scoreboard
 			StdDraw.setPenColor(StdDraw.BLACK);
 			StdDraw.filledRectangle(0, -1, 1.5,.2);
 			StdDraw.setPenColor(StdDraw.WHITE);
-			StdDraw.textLeft(-1, -.9, "Score:" + score);
-			StdDraw.textLeft(-1, -1, "High Score:" + highScore);
-			StdDraw.textRight(1, -1, "Level " + level);
-			StdDraw.textRight(1, 1, version );
+			StdDraw.textLeft(-1.05, -.9, "Score:" + score);
+			StdDraw.textLeft(-1.05, -1, "High Score:" + highScore);
+			StdDraw.textRight(1.05, -1, "Level " + level);
+			StdDraw.textRight(1.05, 1, version );
 			StdDraw.text(0, -1,(( (double)Math.round(((System.currentTimeMillis() - startTime) /1000) *10) /10) +" Seconds"));
-			if (invul == true) StdDraw.textRight(1, .9, "Invulnerable");
+			if (invul == true) StdDraw.textRight(1.05, .9, "Invulnerable");
+			
+			//F3 menu print
+			if (f3 == true) {
+				StdDraw.setPenColor(StdDraw.WHITE);
+				StdDraw.textLeft(-1.05,1,"F3 Menu");
+				StdDraw.textLeft(-.675, .9, "FPS: " + FPS);
+				StdDraw.textLeft(-1.05,.9,"Entities: " + ents);
+				StdDraw.textLeft(-1.05,.8,"Bullets:" + posArray.length);
+				StdDraw.textLeft(-1.05,.7,"Squares:" + sposArray.length);
+				StdDraw.textLeft(-1.05,.6,"Explosions:" + explArray.length);
+				StdDraw.textLeft(-1.05,.5,"Power Ups:" + pposArray.length);
+				}
 			
 			// Displays and sets the background
 			StdDraw.show(0); 
@@ -507,6 +603,12 @@ public class Flatscape {
 			if (StdDraw.isKeyPressed(83)) {
 				if (!invul && offInvul == 0) {invul = true; invulCount = 10;}
 				if (invul == true && invulCount == 0) {invul = false; offInvul = 10;}
+				}
+			
+			//F3 menu
+			if (StdDraw.isKeyPressed(114)) {
+				if (!f3 && f3offcount == 0) {f3 = true; f3count = 10;}
+				if (f3 == true && f3count == 0) {f3 = false; f3offcount = 10;}
 				}
 			
 			}
