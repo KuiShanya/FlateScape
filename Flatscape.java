@@ -3,29 +3,32 @@ import java.io.*;
 import java.util.*;
 public class FlatSpace { 
 	public static void main(String[] args) throws InterruptedException {
-		/* FlatSpace Alpha Version 1.9.9 -Beta once HD textures for powerups and opening are done
+		/* FlatSpace Beta Version 1.1 -Still Need to add hd intro but everything else is there
 		   Orignally done by the Prinecton Programming webstie in flash, now adapted to java
 		   Credit to bleach and tim for various help and ideas for the program
 		   Things to add:
-		    -Different enemies
+		    -Different enemies (Stars added)
 		    -More Textures
 		    -Chaging difficulty
 		    -Longer high score list, with names
 		    -Final HD textures
 		    Bugs:
-		     -IMPORTANT Seemingly after level 11 when delay is 0, earliest happened is 12, 
+		     -(Fixed i think) IMPORTANT Seemingly after level 11 when delay is 0, earliest happened is 12, 
 		      the game will crash because the array that controls the powerup type and timer does not exist
-		     -Health may not be completely working
 		     -Make Squares not inside each other
 		     -Squares still stuck at the bottom of the screen
 		*/
-		String version = "Alpha Version 1.9.9";
+		String version = "Beta Version 1.1";
 		
 		//Sets the pictures used
-		String[] pictures = new String[3];
+		String[] pictures = new String[7];
 		pictures[0] = "Default/FixedTriangle.png";
 		pictures[1] = "Default/smallSquare.png";
 		pictures[2] = "Default/Square.png";
+		pictures[3] = "Default/star.png";
+		pictures[4] = "Default/Fast.png";
+		pictures[5] = "Default/rapid.png";
+		pictures[6] = "Default/StarFrag.png";
 		
 		// set the scale of the coordinate system
 		StdDraw.setXscale(-1.0, 1.0);
@@ -66,8 +69,6 @@ public class FlatSpace {
 		double randX = 0; double randY = 0;  // position (square)
 		ArrayList<double[]> bp = new ArrayList<double[]>();  // position 
 		ArrayList<double[]> bv = new ArrayList<double[]>();  // velocity
-		ArrayList<Double> sType = new ArrayList<Double>(); //Random variable that chooses if the square is big or small
-		ArrayList<Integer> health = new ArrayList<Integer>(); //Health of the large squares
 		double[] Pos = null; // These 4 arrays are used in varying ways, usally to take a specific instance of the object
 		double[] Vel = null; 
 		double[] sPos = null;  
@@ -76,8 +77,7 @@ public class FlatSpace {
 		double vx = 0, vy = 0;     // velocity (character)
 		double TriAngle = 0;  // angle of the triangle
 		double velocity = 0.028; // speed of the bullet
-		double sVelocity = 0.003; // squares velocity
-		double randSqr = 0;//Indiviual size of the square
+		double sVelocity = 0.005; // squares velocity
 		double angle = 0; double adj = 0; double opp = 0; //used for determining velocity
 		int delay = 0; int squareDelay = 0; int diffDelay = 10;  //Delays for spawning, can be changed based on level or difficulty
 		int level = 1; int count = 0; 	int score = 0; int highScore = in.nextInt();// Level, score and count to dispaly levelup, and high score
@@ -87,6 +87,7 @@ public class FlatSpace {
 		int degree = 0; 
 		int FPS = 0; int FPScount = 0;
 		boolean Inv = true;
+		double strVelocity = .003; double trVelocity = .04;
 		
 		//Waits on ending screen
 		if (end) {
@@ -99,7 +100,7 @@ public class FlatSpace {
 		skip = false;
 		while (!skip) {
 			
-			//Title Screen	
+			//Title Screen
 			StdDraw.picture(0, 0, "StartScreen.jpg", 2.2, 2.2);
 			StdDraw.show(0);
 			while (!StdDraw.isKeyPressed(10) && !StdDraw.isKeyPressed(112) && !StdDraw.isKeyPressed(113) && !StdDraw.isKeyPressed(114) && !StdDraw.isKeyPressed(115)) {}
@@ -124,11 +125,17 @@ public class FlatSpace {
 						pictures[0] = "Default/FixedTriangle.png";
 						pictures[1] = "Default/smallSquare.png";
 						pictures[2] = "Default/Square.png";
+						pictures[3] = "Default/star.jpg";
+						pictures[4] = "Default/Fast.png";
+						pictures[5] = "Default/rapid.png";
+						pictures[6] = "Default/StarFrag.png";
 						}
 					if (StdDraw.isKeyPressed(50)) {
 						pictures[0] = "Bad Drow/Drow.jpg";
 						pictures[1] = "Bad Drow/Daedalus.png";
 						pictures[2] = "Bad Drow/MantaStyle.png";
+						pictures[3] = "Bad Drow/DivineRapier.png";
+						pictures[6] = "Bad Drow/SacredRelic.png";
 						}
 					if (StdDraw.isKeyPressed(51)) {
 						pictures[0] = "Steam Sale/Wallet.gif";
@@ -183,8 +190,8 @@ public class FlatSpace {
 		while (!end)  { 
 			
 			//arrays set up for various things that emtpied if they werent redeclared every time
-			double[] sFast = {10,1,4};
-			double[] sRapid = {10,2,4};
+			double[] sFast = {2*(level/2) + 1,1,4};
+			double[] sRapid = {2*(level/2) + 1,2,4};
 			double[] sBig = {1,20,3};
 			double[] sSmall = {0,20,3};
 			
@@ -257,20 +264,43 @@ public class FlatSpace {
 				//Prevents blocks from spawning on your character
 				while (rx + .1 >= randX && rx - .1 <= randX) {randX = Math.random() + Math.random() - 1;}
 				while (ry + .1 >= randY && ry - .1 <= randY && randY < -.75) {randY = Math.random() + Math.random() - 1;}
-				sType.add(Math.random());
-				
 				//Sets position and velocity, which goes toward the edge of the screen
-				sPos = new double[]{randX,randY,2};
-				if (Math.random() <= .5) {
-					sVel = new double[]{sVelocity * (randX / Math.abs(randX)) , sVelocity * (randY / Math.abs(randY)), 2};
+				if (Math.random() < .89) {
+					if (Math.random() < .9) {
+						sPos = new double[]{randX,randY,2};
+						if (Math.random() <= .5) {
+							sVel = new double[]{sVelocity * (randX / Math.abs(randX)) , sVelocity * (randY / Math.abs(randY)), 2};
+							}
+						else {
+							sVel = new double[]{Math.cos(Math.atan(ry - randY/rx - randX)) * ((rx - randX)/Math.abs(rx - randX)) * sVelocity , Math.sin(Math.atan(ry - randY/rx - randX)) * ((ry- randY)/Math.abs(ry - randY)) * sVelocity,2};
+							}
+						bp.add(sPos);
+						bv.add(sVel);
+						}
+					else {
+						sPos = new double[]{randX,randY,7};
+						if (Math.random() <= .5) {
+							sVel = new double[]{sVelocity * (randX / Math.abs(randX)) , sVelocity * (randY / Math.abs(randY)), 7,4};
+							}
+						else {
+							sVel = new double[]{Math.cos(Math.atan(ry - randY/rx - randX)) * ((rx - randX)/Math.abs(rx - randX)) * sVelocity , Math.sin(Math.atan(ry - randY/rx - randX)) * ((ry- randY)/Math.abs(ry - randY)) * sVelocity,7,4};
+							}
+						bp.add(sPos);
+						bv.add(sVel);
+						}
 					}
 				else {
-					sVel = new double[]{Math.cos(Math.atan(ry - randY/rx - randX)) * ((rx - randX)/Math.abs(rx - randX)) * sVelocity , Math.sin(Math.atan(ry - randY/rx - randX)) * ((ry- randY)/Math.abs(ry - randY)) * sVelocity,2};
+					sPos = new double[]{randX,randY,5};
+					if (Math.random() <= .5) {
+						sVel = new double[]{strVelocity * (randX / Math.abs(randX)) , strVelocity * (randY / Math.abs(randY)), 5};
+						}
+					else {
+						sVel = new double[]{Math.cos(Math.atan(ry - randY/rx - randX)) * ((rx - randX)/Math.abs(rx - randX)) * strVelocity , Math.sin(Math.atan(ry - randY/rx - randX)) * ((ry- randY)/Math.abs(ry - randY)) * strVelocity,5};
+						}
+					bp.add(sPos);
+					bv.add(sVel);
 					}
-				bp.add(sPos);
-				bv.add(sVel);
-				health.add(4);
-					}
+				}
 			
 			 
 			//Recreated array system for drawing all objects on the screen, done for more easy modulation, just change the number of instance in counts and add more arrays 
@@ -279,7 +309,7 @@ public class FlatSpace {
 			//Figures out how many of each type of object there are
 			for (int i = 0; i <bp.size(); i++) {
 				if (bp.get(i)[2] == 1) counts[0]++;
-				else if (bp.get(i)[2] == 2) counts[1]++;
+				else if (bp.get(i)[2] == 2 || bp.get(i)[2] == 5 || bp.get(i)[2] == 6 || bp.get(i)[2] == 7) counts[1]++;
 				else if (bp.get(i)[2] == 3) counts[2]++;
 				else if (bp.get(i)[2] == 4) counts[3]++;
 				}
@@ -304,7 +334,7 @@ public class FlatSpace {
 					velArray[counts[0]] = bv.get(i);
 					counts[0]++;
 					}
-				else if (bp.get(i)[2] == 2 && bv.get(i)[2] == 2) {
+				else if ((bp.get(i)[2] == 2 && bv.get(i)[2] == 2) || (bp.get(i)[2] == 5 && bv.get(i)[2] == 5) || (bp.get(i)[2] == 6 && bv.get(i)[2] == 6) || (bp.get(i)[2] == 7 && bv.get(i)[2] == 7)) {
 					sposArray[counts[1]] = bp.get(i);
 					svelArray[counts[1]] = bv.get(i);
 					counts[1]++;
@@ -321,38 +351,38 @@ public class FlatSpace {
 					}
 				}
 			
+			
 			//Saves entities size for later
 			ents = bp.size();
-					
-			//Some way to make intergrated maybe?
-			double [] stypeArray = new double[sType.size()];
-			for (int i = 0; i < sType.size(); i++) {stypeArray[i] = sType.get(i);}
 					
 			//Clears bp and bv so the arrays can correctly have all current bullets added as well as sp and sv and stype array for squares
 			bp.clear();
 			bv.clear();
-			sType.clear();
 			
 			//Creates sqaures (needs to be .15 or .04
 			for (int i = 0; i < sposArray.length; i++) {
 				sPos = sposArray[i];
 				sVel = svelArray[i];
-				randSqr = stypeArray[i];
 				sPos[0] = sPos[0] + sVel[0];
 				sPos[1] = sPos[1] + sVel[1];
-				StdDraw.setPenColor(StdDraw.WHITE);
-				if (randSqr < .8) {
-					StdDraw.picture(sPos[0], sPos[1], pictures[1], .08, .084,degree);
-					}
-				else {StdDraw.picture(sPos[0], sPos[1], pictures[2], .2, .2,degree);}
+				StdDraw.setPenColor(StdDraw.YELLOW);
+				if (sPos[2] == 2) {StdDraw.picture(sPos[0], sPos[1], pictures[1], .08, .08, degree);}
+				else if (sPos[2] == 5) {StdDraw.picture(sPos[0], sPos[1], pictures[3], .1, .1, degree);	}
+				else if (sPos[2] == 6) {StdDraw.picture(sPos[0], sPos[1], pictures[6], .06, .06, degree);}
+				else if (sPos[2] == 7) {StdDraw.picture(sPos[0], sPos[1], pictures[2], .2, .2, degree);}
 				bp.add(sPos);
 				bv.add(sVel);
-				sType.add(randSqr);
-				if (randSqr < .8) {
+				if (sPos[2] == 2) {
 					if ((rx + .04 >= sPos[0] && rx - .04 <= sPos[0]) && (ry + .04 >= sPos[1] && ry - .04 <= sPos[1]) && !invul) {end = true;}
 					}
-				else {
+				else if (sPos[2] == 7) {
 					if ((rx + .1 >= sPos[0] && rx - .1 <= sPos[0]) && (ry + .1 >= sPos[1] && ry - .1 <= sPos[1]) && !invul) {end = true;}
+					}
+				else if (sPos[2] == 5) {
+					if ((rx + .05 >= sPos[0] && rx - .05 <= sPos[0]) && (ry + .05 >= sPos[1] && ry - .05 <= sPos[1]) && !invul) {end = true;}
+					}
+				else if (sPos[2] == 6) {
+					if ((rx + .04 >= sPos[0] && rx - .04 <= sPos[0]) && (ry + .04 >= sPos[1] && ry - .04 <= sPos[1]) && !invul) {end = true;}
 					}
 				if (Math.abs(sPos[0]) >= 1.1) {sVel[0] = -sVel[0];}
 				if (sPos[1] >= 1.1 || sPos[1] <= -.8) {sVel[1] = -sVel[1];}
@@ -368,7 +398,7 @@ public class FlatSpace {
 				StdDraw.filledCircle(Pos[0], Pos[1], .009);
 				bp.add(Pos);
 				bv.add(Vel);
-				for (int j = 0; j< pposArray.length; j++) {
+				for (int j = 0; j < pposArray.length; j++) {
 					sPos = pposArray[j];
 					sVel = pvelArray[j];
 					if (sPos.length != 3) {continue;}
@@ -378,7 +408,7 @@ public class FlatSpace {
 						bp.remove(Pos);
 						bv.remove(Vel);
 						}
-				}
+					}
 				
 				//Checks if the bullet hits the edge of the screen
 				if (Math.abs(Pos[0]) >=1.1 || Pos[1] >= 1.1 || Pos[1] <= -.8) {
@@ -391,16 +421,13 @@ public class FlatSpace {
 				for (int j = 0; j < sposArray.length; j++) {
 					sPos = sposArray[j];
 					sVel = svelArray[j];
-					randSqr = stypeArray[j];
-					if (randSqr < .8) {
-						
+					if (sPos[2] == 2) {
 						//If it hits, remove the bullet and sqaure, add to the score
 						if ((Pos[0] + .04 >= sPos[0] && Pos[0] - .04 <= sPos[0]) && (Pos[1] + .04 >= sPos[1] && Pos[1] - .04 <= sPos[1])) {
 							bp.remove(sPos);
 							bv.remove(sVel);
 							bp.remove(Pos);
 							bv.remove(Vel);
-							sType.remove(randSqr);
 							if (Math.random() < .05 && !powerType[0] && !powerType[1]) {
 								pPos = new double[] {sPos[0],sPos[1],4};
 								bp.add(pPos); 
@@ -408,32 +435,28 @@ public class FlatSpace {
 								else bv.add(sFast);
 								}
 							else {
-								sPos[2] = 3;
-								bp.add(sPos);
+								pPos = new double[] {sPos[0],sPos[1],3};
+								bp.add(pPos);
 								bv.add(sSmall);
 								}
 							score++;
 							continue;
 							}
 						}
-					else {
-						
+					else if (sPos[2] == 7)  {
 						//Hit detection for larger squares
 						if ((Pos[0] + .1 >= sPos[0] && Pos[0] - .1 <= sPos[0]) && (Pos[1] + .1 >= sPos[1] && Pos[1] - .1 <= sPos[1])) {
-							
 							//Only dies after 4 hits
-							if (health.get(j) > 0) {
+							if (sVel[3] > 0) {
 								bp.remove(Pos);
 								bv.remove(Vel);
-								health.set(j,health.get(j) - 1);
+								sVel[3]--;
 								}
 							
 							//Adds 10 points instead
 							else {
 								bp.remove(sPos);
 								bv.remove(sVel);
-								sType.remove(randSqr);
-								health.remove(j);
 								if (Math.random() < .05 && !powerType[0] && !powerType[1]) {
 									pPos = new double[] {sPos[0],sPos[1],4};
 									bp.add(pPos);
@@ -441,12 +464,52 @@ public class FlatSpace {
 									else bv.add(sFast);
 									}
 								else {
-									sPos[2] = 3;
-									bp.add(sPos);
+									pPos = new double[] {sPos[0],sPos[1],3};
+									bp.add(pPos);
 									bv.add(sBig);
-								}
+									}
 								score = score + 10;
 								}
+							continue;
+							}
+						}
+					else if (sPos[2] == 5) {
+						//Star detection
+						if ((Pos[0] + .05 >= sPos[0] && Pos[0] - .05 <= sPos[0]) && (Pos[1] + .05 >= sPos[1] && Pos[1] - .05 <= sPos[1])) {
+							bp.remove(Pos);
+							bv.remove(Vel);
+							bp.remove(sPos);
+							bv.remove(sVel);
+							for (int k = 0; k < 3; k++) {
+								pPos = new double[] {sPos[0],sPos[1],6};
+								bp.add(pPos);
+								if (Math.random() <= .5) {
+									sVel = new double[]{trVelocity * (sPos[0] / Math.abs(sPos[0])) , trVelocity * (sPos[1] / Math.abs(sPos[1])), 6};
+									}
+								else {
+									sVel = new double[]{Math.cos(Math.atan(ry - sPos[1]/rx - sPos[0])) * ((rx - sPos[0])/Math.abs(rx - sPos[0])) * trVelocity , Math.sin(Math.atan(ry - sPos[1]/rx - sPos[0])) * ((ry- sPos[1])/Math.abs(ry - sPos[1])) * trVelocity,6};
+									}
+								switch (k) {
+									case 0: sVel[0] = -sVel[0]; sVel[1] = -sVel[1];
+									case 1: sVel[0] = -sVel[0];
+									case 2: sVel[1] = -sVel[1];
+									}	
+								bv.add(sVel);
+								}
+							score = score + 5;
+							continue;
+							}
+						}
+					else if (sPos[2] == 6) {
+						if ((Pos[0] + .05 >= sPos[0] && Pos[0] - .05 <= sPos[0]) && (Pos[1] + .05 >= sPos[1] && Pos[1] - .05 <= sPos[1])) {
+							bp.remove(Pos);
+							bv.remove(Vel);
+							bp.remove(sPos);
+							bv.remove(sVel);
+							pPos = new double[] {sPos[0],sPos[1],3};
+							bp.add(pPos);
+							bv.add(sSmall);
+							score = score + 5;
 							continue;
 							}
 						}
@@ -464,17 +527,11 @@ public class FlatSpace {
 					else if (sVel[1] == 2) powerType[1] = true;
 					bp.remove(sPos);
 					bv.remove(sVel);
-					powerup = 300;
+					powerup = 150;
 					}
 				else {
-					if (sVel[1] == 1) {
-						StdDraw.setPenColor(StdDraw.ORANGE);
-						StdDraw.filledSquare(sPos[0],sPos[1], .04);
-						}
-					else if (sVel[1] == 2) {
-						StdDraw.setPenColor(StdDraw.RED);
-						StdDraw.filledSquare(sPos[0],sPos[1], .04);
-						}
+					if (sVel[1] == 1) {	StdDraw.picture(sPos[0],sPos[1],pictures[4],.08,.08);}
+					else if (sVel[1] == 2) {StdDraw.picture(sPos[0],sPos[1],pictures[5],.08,.08);}
 					bp.add(sPos);
 					bv.add(sVel);
 					}
