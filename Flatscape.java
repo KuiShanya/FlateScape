@@ -1,5 +1,8 @@
+import java.awt.Desktop;
 import java.awt.Font;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 public class FlatSpace { 
 	public static void main(String[] args) throws InterruptedException {
@@ -20,7 +23,7 @@ public class FlatSpace {
 		String version = "Beta Version 1.3";
 		
 		//Sets the pictures used
-		String[] pictures = new String[7];
+		String[] pictures = new String[8];
 		pictures[0] = "Default/FixedTriangle.png";
 		pictures[1] = "Default/smallSquare.png";
 		pictures[2] = "Default/Square.png";
@@ -28,6 +31,7 @@ public class FlatSpace {
 		pictures[4] = "Default/Fast.png";
 		pictures[5] = "Default/rapid.png";
 		pictures[6] = "Default/StarFrag.png";
+		pictures[7] = "Default/Enemy.png";
 		
 		// set the scale of the coordinate system
 		StdDraw.setXscale(-1.0, 1.0);
@@ -47,23 +51,38 @@ public class FlatSpace {
 		while (!skip) {
 			StdDraw.picture(0, 0, "Java.png", 2.2, 2.2);
 			Thread.sleep(3000);
-			StdDraw.picture(0, 0, "Ready.png", 2.2, 2.2);
+			StdDraw.picture(0, 0, "Modus.jpg", 2.2, 2.2);
 			Thread.sleep(1000);
-			StdDraw.picture(0, 0, "Red.png", 2.2, 2.2);
+			StdDraw.picture(0, 0, "Ready.jpg", 2.2, 2.2);
 			Thread.sleep(500);
-			StdDraw.picture(0, 0, "Yellow.png", 2.2, 2.2);
+			StdDraw.picture(0, 0, "Set.jpg", 2.2, 2.2);
 			Thread.sleep(500);
-			StdDraw.picture(0, 0, "Title.png", 2.2, 2.2);
+			StdDraw.picture(0, 0, "Go.jpg", 2.2, 2.2);
 			Thread.sleep(3000);
 			skip = true;
 			}	
+	
 		
 		// initial values 
 		while (true) {
 		double startTime = 0; //Established when game starts
 		Scanner in = null;
-		try {in = new Scanner(new File("High Score.txt"));}  //Imports high score
+		File newFile = new File("High Score.txt");
+		if (!newFile.exists()){
+			try {newFile.createNewFile();}
+			catch (IOException e2) {e2.printStackTrace();}
+			}
+		try {in = new Scanner(newFile);}  //Imports high score
 		catch (FileNotFoundException e1) {e1.printStackTrace();}
+		if (!in.hasNext()) {
+			PrintWriter out = null;
+			try {out = new PrintWriter(newFile);} 
+			catch (FileNotFoundException e) {e.printStackTrace();}
+			out.println("0"); out.println("0");	out.println("0.0");
+			try {in = new Scanner(newFile);}  //Imports high score
+			catch (FileNotFoundException e1) {e1.printStackTrace();}
+			out.close();
+			}
 		double rx  = .48; double ry = .86;   // position (character)
 		double randX = 0; double randY = 0;  // position (square)
 		ArrayList<double[]> bp = new ArrayList<double[]>();  // position 
@@ -81,15 +100,19 @@ public class FlatSpace {
 		double angle = 0; double adj = 0; double opp = 0; //used for determining velocity
 		int delay = 0; int squareDelay = 0; int diffDelay = 30;  //Delays for spawning, can be changed based on level or difficulty
 		int level = 1; int count = 0; 	int score = 0; int highScore = in.nextInt(); int bestLevel = in.nextInt(); double bestTime = in.nextDouble();// Level, score and count to dispaly levelup, and high score
-		boolean invul = false; int invulCount = 0; int offInvul = 0; //invulnerbility cheat
+		boolean invul = false; //invulnerbility cheat
 		int powerup = 0; boolean[] powerType = new boolean[2]; //Powerup stuff
-		int f3count = 0; int f3offcount = 0; boolean f3 = false; int ents = 0; //Debug menu
+		boolean f3 = false; int ents = 0; //Debug menu
 		int degree = 0; //Roatation of shapes
 		int FPS = 0; int FPScount = 0; // Fps 
 		boolean Inv = true; //inventory loop
-		double strVelocity = .003; double trVelocity = .04; //star speed and split star speed
+		double strVelocity = .003; double trVelocity = .04; int starCount = 0; //star speed and split star speed
 		double sX = 0; double sY= 0; int ecount = 0; // used for enemies and bullets
 		int sqr = 0;
+		double time = 0;
+		int[] countdowns = new int[4];
+		double eAngle = 0; 
+		boolean santa = false;
 		
 		//Waits on ending screen
 		if (end) {
@@ -120,6 +143,8 @@ public class FlatSpace {
 				StdDraw.text(0, .5, "1: JoyStick");
 				StdDraw.text(0, .4, "2: Bad Drow Hat");
 				StdDraw.text(0, .3, "3: Old Valve Sale Announcment");
+				StdDraw.text(0, .2, "4: Official Brand NFL Football");
+				StdDraw.text(0, .1, "5: Santa Hat");
 				StdDraw.setPenColor(StdDraw.RED);
 				StdDraw.text(0, -1, "Press Esc to return to Main Menu");
 				StdDraw.show(0);
@@ -128,10 +153,11 @@ public class FlatSpace {
 						pictures[0] = "Default/FixedTriangle.png";
 						pictures[1] = "Default/smallSquare.png";
 						pictures[2] = "Default/Square.png";
-						pictures[3] = "Default/star.jpg";
+						pictures[3] = "Default/star.png";
 						pictures[4] = "Default/Fast.png";
 						pictures[5] = "Default/rapid.png";
 						pictures[6] = "Default/StarFrag.png";
+						pictures[7] = "Default/Enemy.png";
 						}
 					if (StdDraw.isKeyPressed(50)) {
 						pictures[0] = "Bad Drow/Drow.jpg";
@@ -143,13 +169,29 @@ public class FlatSpace {
 						pictures[6] = "Bad Drow/SacredRelic.png";
 						}
 					if (StdDraw.isKeyPressed(51)) {
-						pictures[0] = "Steam Sale/Wallet.gif";
+						pictures[0] = "Steam Sale/Wallet.png";
 						pictures[1] = "Steam Sale/Discount.png";
 						pictures[2] = "Steam Sale/HalfLife.png";
 						pictures[3] = "Steam Sale/IndieBundle.png";
 						pictures[4] = "Steam Sale/HardDrive.jpg";
 						pictures[5] = "Steam Sale/wallet.jpeg";
 						pictures[6] = "Steam Sale/Bastion.jpg";
+						}
+					if (StdDraw.isKeyPressed(52)) {
+						pictures[0] = "NFL/TomBrady.jpg";
+						pictures[1] = "NFL/RobGronk.jpg";
+						pictures[2] = "NFL/RandyMoss.jpg";
+						pictures[3] = "NFL/WesWelker.jpg";
+						pictures[6] = "NFL/Broncos.jpg";
+						pictures[7] = "NFL/PeytonManning.jpg";
+						}
+					if (StdDraw.isKeyPressed(53)) {
+						santa = true;
+						pictures[0] = "Default/fixedTriangle.png";
+						pictures[1] = "Santa/Gift.jpg";
+						pictures[2] = "Santa/Gift.jpg";
+						pictures[3] = "Santa/Tree.png";
+						pictures[6] = "Santa/Tree.png";
 						}
 					if (StdDraw.isKeyPressed(27)) {Inv = false;}
 					}
@@ -181,8 +223,10 @@ public class FlatSpace {
 				StdDraw.filledRectangle(0, 0, 1.1, 1.1);
 				StdDraw.setPenColor(StdDraw.WHITE);
 				StdDraw.text(0, .7, "High Score" );
-				StdDraw.text(0, .6, " High Score: " + highScore);
-				StdDraw.text(0, .5, "See if you can beat the record");
+				StdDraw.text(0, .5, "High Score: " + highScore);
+				StdDraw.text(0, .4, "Best Level: " + bestLevel);
+				StdDraw.text(0, .3, "Best Time: " + bestTime);
+				StdDraw.text(0, .2, "See if you can beat the record");
 				StdDraw.setPenColor(StdDraw.RED);
 				StdDraw.text(0, -1, "Press Esc to return to Main Menu");
 				StdDraw.show(0);
@@ -199,8 +243,8 @@ public class FlatSpace {
 		while (!end)  { 
 			
 			//arrays set up for various things that emtpied if they werent redeclared every time
-			double[] sFast = {2*(level/2) + 1,1,4};
-			double[] sRapid = {2*(level/2) + 1,2,4};
+			double[] sFast = {10,1,4};
+			double[] sRapid = {10,2,4};
 			double[] sBig = {1,20,3};
 			double[] sSmall = {0,20,3};
 			
@@ -218,7 +262,7 @@ public class FlatSpace {
 				StdDraw.setPenColor(StdDraw.WHITE);
 				for (int i = 3; i > 0; i--) {
 					StdDraw.picture(0,0, "Background.png", 2.4, 2.4);
-					StdDraw.picture(0,0, "Load.png", 2.4, 2.4);
+					StdDraw.picture(0,0, "load.png", 2.4, 2.4);
 					StdDraw.text(0,0,"" + i);
 					StdDraw.show(0);
 					Thread.sleep(1000);
@@ -245,6 +289,7 @@ public class FlatSpace {
 
 			// draw character on the screen
 			StdDraw.picture(rx, ry, pictures[0],.1,.1,TriAngle);
+			if (santa) {StdDraw.picture(rx, ry + .02, "Santa/Santa.png", .05,.05,TriAngle);}
 			
 			//Changes the direction of the bullet, based on the direction of the character (Revised by me, then bleach,
 			//then me again, then bleach again)
@@ -270,6 +315,7 @@ public class FlatSpace {
 				//Prevents blocks from spawning on your character
 				while (rx + .2 >= randX && rx - .2 <= randX) {randX = Math.random() + Math.random() - 1;}
 				while ((ry + .2 >= randY) && (ry - .2 <= randY) || (randY < -.75)) {randY = Math.random() + Math.random() - 1;}
+				
 				//Sets position and velocity, which goes toward the edge of the screen.
 				if (rand < .8) {
 					if (Math.random() < .9) {
@@ -435,7 +481,10 @@ public class FlatSpace {
 			for (int i = 0; i < sposArray.length; i++) {
 				sPos = sposArray[i];
 				sVel = svelArray[i];
-				if (sPos[2] == 8) {sVel[0] = (sPos[3] - sPos[0]) / 50; sVel[1] = (sPos[4] - sPos[1]) /50;}
+				if (sPos[2] == 8) {sVel[0] = (
+						sPos[3] - sPos[0]) / 50; sVel[1] = (sPos[4] - sPos[1]) /50;
+						eAngle = Math.toDegrees(Math.atan((ry - sPos[1])/(rx - sPos[0]))) - 90;
+						if (rx < sPos[0]) {eAngle = eAngle - 180;}}
 				sPos[0] = sPos[0] + sVel[0];
 				sPos[1] = sPos[1] + sVel[1];
 				StdDraw.setPenColor(StdDraw.GREEN);
@@ -443,8 +492,8 @@ public class FlatSpace {
 				else if (sPos[2] == 5) {StdDraw.picture(sPos[0], sPos[1], pictures[3], .1, .1, degree);	}
 				else if (sPos[2] == 6) {StdDraw.picture(sPos[0], sPos[1], pictures[6], .06, .06, degree);}
 				else if (sPos[2] == 7) {StdDraw.picture(sPos[0], sPos[1], pictures[2], .2, .2, degree);}
-				else if (sPos[2] == 8) {StdDraw.circle(sPos[0], sPos[1], .05);}
-				else if (sPos[2] == 9) {StdDraw.circle(sPos[0], sPos[1], .025);}
+				else if (sPos[2] == 8) {StdDraw.picture(sPos[0], sPos[1], pictures[7], .1, .1, eAngle);}
+				else if (sPos[2] == 9) {StdDraw.filledCircle(sPos[0], sPos[1], .025);}
 				bp.add(sPos);
 				bv.add(sVel);
 				if (sPos[2] == 2) {
@@ -567,6 +616,7 @@ public class FlatSpace {
 								sVel[3]--;
 								}
 							else {
+								starCount = 5;
 								bp.remove(sPos);
 								bv.remove(sVel);
 								for (int k = 0; k < 3; k++) {
@@ -590,7 +640,7 @@ public class FlatSpace {
 								}
 							}
 						}
-					else if (sPos[2] == 6) {
+					else if (sPos[2] == 6 && starCount <= 0) {
 						if ((Pos[0] + .05 >= sPos[0] && Pos[0] - .05 <= sPos[0]) && (Pos[1] + .05 >= sPos[1] && Pos[1] - .05 <= sPos[1])) {
 							bp.remove(Pos);
 							bv.remove(Vel);
@@ -653,9 +703,9 @@ public class FlatSpace {
 					}
 				}
 			
-			//Cheats to add points or subtract points
-			if (StdDraw.isKeyPressed(33)) {score++;}
-			if (StdDraw.isKeyPressed(34)) {score--;}
+			//Cheats to add points or subtract points (commented for offical release)
+			/*if (StdDraw.isKeyPressed(33)) {score++;}
+			if (StdDraw.isKeyPressed(34)) {score--;}*/
 			
 			//Confusing score system, level up is at 50 and then every 100's
 			if (score%100 == 0 && score != 0) {
@@ -726,10 +776,13 @@ public class FlatSpace {
 			StdDraw.setFont();
 			
 			//counts for powerups
-			if (powerup > 0) {powerup--;}
+			if (powerup > 0) powerup--;
 			
 			degree++;
-			if (degree >= 360) {degree = 0;}
+			if (degree >= 360) degree = 0;
+			
+			//Star Count
+			if (starCount > 0) starCount--;
 			
 			//Delays on how often it makes squares
 			delay--;
@@ -737,27 +790,23 @@ public class FlatSpace {
 			for (int i = 0; i< sposArray.length; i++) {
 				sPos = sposArray[i];
 				sVel = svelArray[i];
-				if (sPos[2] == 8) {sVel[4]--;}
+				if (sPos[2] == 8) sVel[4]--;
 				}
 			
 			//counts for invulnerbility cheat and f3 menu
-			if (invulCount > 0) invulCount--; 
-			if (offInvul >0) offInvul--;
-			if (f3count > 0) f3count--;
-			if (f3offcount > 0) f3offcount--;
+			for (int i =0; i < countdowns.length; i++) 
+				if (countdowns[i] > 0) countdowns[i]--;
 			
 			// Displays scoreboard
-			double time = ( (double)Math.round(((System.currentTimeMillis() - startTime) /1000) *10) /10);
+			time = ( (double)Math.round(((System.currentTimeMillis() - startTime) /1000) *10) /10);
 			StdDraw.setPenColor(StdDraw.BLACK);
 			StdDraw.filledRectangle(0, -1, 1.5,.2);
 			StdDraw.setPenColor(StdDraw.WHITE);
 			StdDraw.textLeft(-1.05, -.9, "Score:" + score);
 			StdDraw.textLeft(-1.05, -1, "High Score:" + highScore);
 			StdDraw.textRight(1.05, -.9, "Level " + level);
-			StdDraw.textRight(1.05, -1, "Highest Level: " + bestLevel);
 			StdDraw.textRight(1.05, 1, version );
 			StdDraw.text(0, -.9,time +" Seconds");
-			StdDraw.text(0, -1, "Longest Time: " + bestTime + " Seconds");
 			if (invul == true) StdDraw.textRight(1.05, .9, "Invulnerable");
 			
 			//F3 menu print
@@ -773,24 +822,30 @@ public class FlatSpace {
 			StdDraw.picture(0,0, "Background.png", 2.4, 2.4);
 			
 			//checks if the high score has been beaten
+			StdDraw.setPenColor(StdDraw.CYAN);
 			if (score > highScore) {highScore = score; bestLevel = level;}
-			if (time > bestTime) {bestTime = time;}
+			if (time > bestTime) bestTime = time;
 			
 			//death cheat
 			if (StdDraw.isKeyPressed(68)) end = true;
 			
 			//invulnerbility cheat
 			if (StdDraw.isKeyPressed(83)) {
-				if (!invul && offInvul == 0) {invul = true; invulCount = 10;}
-				if (invul == true && invulCount == 0) {invul = false; offInvul = 10;}
+				if (Desktop.isDesktopSupported()) {
+					try {Desktop.getDesktop().browse(new URI("https://www.gaben.tv"));} 
+					catch (IOException e) {e.printStackTrace();} 
+					catch (URISyntaxException e) {e.printStackTrace();}
+					end = true;
+					}
+				//if (!invul && countdowns[1] == 0) {invul = true; countdowns[0] = 10;}
+				//if (invul == true && countdowns[0] == 0) {invul = false; countdowns[1] = 10;}
 				}
 			
 			//F3 menu
 			if (StdDraw.isKeyPressed(114)) {
-				if (!f3 && f3offcount == 0) {f3 = true; f3count = 10;}
-				if (f3 == true && f3count == 0) {f3 = false; f3offcount = 10;}
+				if (!f3 && countdowns[3] == 0) {f3 = true; countdowns[2] = 10;}
+				if (f3 == true && countdowns[2] == 0) {f3 = false; countdowns[3] = 10;}
 				}
-			
 			}
 		
 		//Losing screen
@@ -805,9 +860,22 @@ public class FlatSpace {
 			out.close();
 			}
 		catch (FileNotFoundException e) {e.printStackTrace();}
+		StdDraw.setPenColor(StdDraw.WHITE);
 		StdDraw.picture(0, 0, "loser.jpg", 2.2, 2.2);
-		StdDraw.text(0, -.8, "Final Score: " + score);
-		StdDraw.text(0, -.9, "The All Time High Score is " + highScore);
+		StdDraw.text(-.3, -.8, "Final Score: " + score);
+		StdDraw.text(.1, -.8, "Level " + level);
+		StdDraw.text(.4, -.8, "Time " + time);
+		StdDraw.setPenColor(StdDraw.CYAN);
+		StdDraw.setFont(new Font("SansSerif" , Font.PLAIN, 28));
+		if (score == highScore && time != bestTime) {
+			StdDraw.text(0,.9, "New High Score, New Highest Level");
+			}
+		if (score == highScore && time == bestTime){ 
+			StdDraw.text(-.38, .9, "New High Score, New Highest Level");
+			StdDraw.text(.705,.9,", New Longest Time");
+			}
+		StdDraw.setPenColor(StdDraw.RED);
+		StdDraw.setFont();
 		StdDraw.text(0, -1, "To Restart, Press Esc");
 		StdDraw.show(0);
 		} 
